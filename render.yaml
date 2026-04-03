@@ -5,8 +5,8 @@ services:
     region: oregon
     plan: starter
     rootDir: web
-    buildCommand: npx prisma generate --schema=../prisma/schema.prisma && npm run build
-    startCommand: npx prisma migrate deploy --schema=../prisma/schema.prisma && npm start
+    buildCommand: npm run prisma:generate && npm run build
+    startCommand: npm run prisma:migrate:deploy && npm start
     envVars:
       - key: DATABASE_URL
         fromDatabase:
