@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../web/node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FormStatus {
+  PENDING
+  READY
+  FAILED
+}
+
+model Form {
+  id         String     @id @default(cuid())
+  title      String
+  sourceUrl  String?
+  rawContent String?
+  status     FormStatus @default(PENDING)
+  errorMsg   String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  dateSlots  DateSlot[]
+}
+
+model DateSlot {
+  id         String     @id @default(cuid())
+  formId     String
+  label      String
+  date       DateTime?
+  groupLabel String?
+  sortOrder  Int
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  form       Form       @relation(fields: [formId], references: [id], onDelete: Cascade)
+  responses  Response[]
+
+  @@index([formId])
+}
+
+model Response {
+  id         String   @id @default(cuid())
+  dateSlotId String
+  userName   String
+  available  Boolean
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  dateSlot   DateSlot @relation(fields: [dateSlotId], references: [id], onDelete: Cascade)
+
+  @@unique([dateSlotId, userName])
+  @@index([dateSlotId])
+}
