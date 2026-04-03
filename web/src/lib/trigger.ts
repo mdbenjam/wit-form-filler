@@ -1,5 +1,4 @@
 import { tasks, runs } from "@trigger.dev/sdk/v3";
-import type { parseGoogleFormTask } from "../../../../src/trigger/parse-google-form";
 
 interface FormSection {
   sectionTitle: string | null;
@@ -14,7 +13,7 @@ interface FormData {
 export async function triggerParseGoogleFormTrigger(
   formUrl: string
 ): Promise<FormData> {
-  const handle = await tasks.trigger<typeof parseGoogleFormTask>(
+  const handle = await tasks.trigger(
     "parse-google-form",
     { formUrl }
   );
