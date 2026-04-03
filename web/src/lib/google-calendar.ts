@@ -2,6 +2,8 @@ export interface CalendarEvent {
   summary: string;
   start: string;
   end: string;
+  startISO: string;
+  endISO: string;
   allDay: boolean;
 }
 
@@ -30,9 +32,23 @@ export function parseGoogleEvents(rawEvents: GoogleEvent[]): CalendarEvent[] {
         summary: e.summary || "(No title)",
         start: allDay ? (e.start?.date ?? "") : formatEventTime(e.start?.dateTime ?? ""),
         end: allDay ? (e.end?.date ?? "") : formatEventTime(e.end?.dateTime ?? ""),
+        startISO: allDay ? (e.start?.date ?? "") : (e.start?.dateTime ?? ""),
+        endISO: allDay ? (e.end?.date ?? "") : (e.end?.dateTime ?? ""),
         allDay,
       };
     });
+}
+
+/**
+ * Sorts calendar events by start time (ascending).
+ * All-day events (date-only ISO strings) sort before timed events on the same day.
+ */
+export function sortCalendarEvents(events: CalendarEvent[]): CalendarEvent[] {
+  return [...events].sort((a, b) => {
+    const aTime = new Date(a.startISO).getTime();
+    const bTime = new Date(b.startISO).getTime();
+    return aTime - bTime;
+  });
 }
 
 /**

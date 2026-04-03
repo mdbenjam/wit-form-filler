@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getValidAccessToken } from "@/lib/google-auth";
-import { parseGoogleEvents } from "@/lib/google-calendar";
+import { parseGoogleEvents, sortCalendarEvents } from "@/lib/google-calendar";
 
 export async function GET(request: NextRequest) {
   const date = request.nextUrl.searchParams.get("date");
@@ -16,8 +16,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const timeMin = `${date}T00:00:00Z`;
-  const timeMax = `${date}T23:59:59Z`;
+  const tz = "America/New_York";
+  const offset = getTimezoneOffsetString(date, tz);
+  const timeMin = `${date}T00:00:00${offset}`;
+  const timeMax = `${date}T23:59:59${offset}`;
 
   const url = new URL(
     "https://www.googleapis.com/calendar/v3/calendars/primary/events"
@@ -26,6 +28,7 @@ export async function GET(request: NextRequest) {
   url.searchParams.set("timeMax", timeMax);
   url.searchParams.set("singleEvents", "true");
   url.searchParams.set("orderBy", "startTime");
+  url.searchParams.set("timeZone", tz);
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -42,6 +45,24 @@ export async function GET(request: NextRequest) {
   }
 
   const data = await res.json();
-  const events = parseGoogleEvents(data.items ?? []);
+  const events = sortCalendarEvents(parseGoogleEvents(data.items ?? []));
   return NextResponse.json(events);
+}
+
+/**
+ * Computes the UTC offset string (e.g. "-04:00") for a given date in a given
+ * IANA timezone. Uses Intl to avoid any external dependencies.
+ */
+function getTimezoneOffsetString(dateStr: string, timeZone: string): string {
+  // Use noon UTC to avoid DST boundary edge cases
+  const probe = new Date(`${dateStr}T12:00:00Z`);
+  const utcStr = probe.toLocaleString("en-US", { timeZone: "UTC", hour12: false });
+  const localStr = probe.toLocaleString("en-US", { timeZone, hour12: false });
+  const offsetMs = new Date(localStr).getTime() - new Date(utcStr).getTime();
+  const offsetMin = offsetMs / 60_000;
+  const sign = offsetMin >= 0 ? "+" : "-";
+  const absMin = Math.abs(offsetMin);
+  const h = String(Math.floor(absMin / 60)).padStart(2, "0");
+  const m = String(absMin % 60).padStart(2, "0");
+  return `${sign}${h}:${m}`;
 }

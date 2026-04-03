@@ -51,6 +51,7 @@ export function CalendarResponseForm({
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const slotsByDate = useMemo(() => groupSlotsByDate(dateSlots), [dateSlots]);
+  const sortedDates = useMemo(() => [...slotsByDate.keys()].sort(), [slotsByDate]);
   const months = useMemo(() => getSlotMonths(dateSlots), [dateSlots]);
 
   const [monthIndex, setMonthIndex] = useState(0);
@@ -64,8 +65,25 @@ export function CalendarResponseForm({
     [currentMonth.year, currentMonth.month]
   );
 
+  function navigateToDate(dateStr: string) {
+    setSelectedDate(dateStr);
+    // Sync the calendar to show the month containing this date
+    const [y, m] = dateStr.split("-").map(Number);
+    const idx = months.findIndex((mo) => mo.year === y && mo.month === m - 1);
+    if (idx !== -1) setMonthIndex(idx);
+  }
+
   function toggle(slotId: string) {
     setSelections((prev) => ({ ...prev, [slotId]: !prev[slotId] }));
+    setSuccess(false);
+  }
+
+  function selectSlots(slotIds: string[]) {
+    setSelections((prev) => {
+      const next = { ...prev };
+      for (const id of slotIds) next[id] = true;
+      return next;
+    });
     setSuccess(false);
   }
 
@@ -236,7 +254,18 @@ export function CalendarResponseForm({
           slots={slotsByDate.get(selectedDate) ?? []}
           selections={selections}
           onToggle={toggle}
+          onSelectSlots={selectSlots}
           onClose={() => setSelectedDate(null)}
+          onPrevDate={() => {
+            const idx = sortedDates.indexOf(selectedDate);
+            if (idx > 0) navigateToDate(sortedDates[idx - 1]);
+          }}
+          onNextDate={() => {
+            const idx = sortedDates.indexOf(selectedDate);
+            if (idx < sortedDates.length - 1) navigateToDate(sortedDates[idx + 1]);
+          }}
+          hasPrevDate={sortedDates.indexOf(selectedDate) > 0}
+          hasNextDate={sortedDates.indexOf(selectedDate) < sortedDates.length - 1}
         />
       )}
 

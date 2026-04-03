@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseGoogleEvents, formatEventTime } from "./google-calendar";
+import { parseGoogleEvents, formatEventTime, sortCalendarEvents } from "./google-calendar";
 
 describe("parseGoogleEvents", () => {
   it("parses timed events", () => {
@@ -15,6 +15,8 @@ describe("parseGoogleEvents", () => {
     expect(events[0].summary).toBe("Team Meeting");
     expect(events[0].allDay).toBe(false);
     expect(events[0].start).toMatch(/\d{1,2}:\d{2}\s*(AM|PM)/);
+    expect(events[0].startISO).toBe("2026-06-14T14:00:00-04:00");
+    expect(events[0].endISO).toBe("2026-06-14T15:00:00-04:00");
   });
 
   it("parses all-day events", () => {
@@ -30,6 +32,8 @@ describe("parseGoogleEvents", () => {
     expect(events[0].allDay).toBe(true);
     expect(events[0].start).toBe("2026-06-14");
     expect(events[0].end).toBe("2026-06-15");
+    expect(events[0].startISO).toBe("2026-06-14");
+    expect(events[0].endISO).toBe("2026-06-15");
   });
 
   it("filters out cancelled events", () => {
@@ -77,5 +81,39 @@ describe("formatEventTime", () => {
 
   it("returns empty string for empty input", () => {
     expect(formatEventTime("")).toBe("");
+  });
+});
+
+describe("sortCalendarEvents", () => {
+  it("sorts events by start time ascending", () => {
+    const events = [
+      { summary: "Late", start: "3:00 PM", end: "4:00 PM", startISO: "2026-06-14T15:00:00-04:00", endISO: "2026-06-14T16:00:00-04:00", allDay: false },
+      { summary: "Early", start: "9:00 AM", end: "10:00 AM", startISO: "2026-06-14T09:00:00-04:00", endISO: "2026-06-14T10:00:00-04:00", allDay: false },
+      { summary: "Mid", start: "12:00 PM", end: "1:00 PM", startISO: "2026-06-14T12:00:00-04:00", endISO: "2026-06-14T13:00:00-04:00", allDay: false },
+    ];
+    const sorted = sortCalendarEvents(events);
+    expect(sorted.map((e) => e.summary)).toEqual(["Early", "Mid", "Late"]);
+  });
+
+  it("does not mutate the original array", () => {
+    const events = [
+      { summary: "B", start: "2:00 PM", end: "3:00 PM", startISO: "2026-06-14T14:00:00-04:00", endISO: "2026-06-14T15:00:00-04:00", allDay: false },
+      { summary: "A", start: "9:00 AM", end: "10:00 AM", startISO: "2026-06-14T09:00:00-04:00", endISO: "2026-06-14T10:00:00-04:00", allDay: false },
+    ];
+    sortCalendarEvents(events);
+    expect(events[0].summary).toBe("B");
+  });
+
+  it("all-day events sort before timed events on the same day", () => {
+    const events = [
+      { summary: "Timed", start: "9:00 AM", end: "10:00 AM", startISO: "2026-06-14T09:00:00-04:00", endISO: "2026-06-14T10:00:00-04:00", allDay: false },
+      { summary: "All Day", start: "2026-06-14", end: "2026-06-15", startISO: "2026-06-14", endISO: "2026-06-15", allDay: true },
+    ];
+    const sorted = sortCalendarEvents(events);
+    expect(sorted[0].summary).toBe("All Day");
+  });
+
+  it("returns empty array for empty input", () => {
+    expect(sortCalendarEvents([])).toEqual([]);
   });
 });

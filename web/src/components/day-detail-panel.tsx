@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { parseDateRange } from "@/lib/parse-date-label";
+import { checkSlotOverlap, type OverlapResult } from "@/lib/overlap";
 
 interface CalendarEvent {
   summary: string;
   start: string;
   end: string;
+  startISO: string;
+  endISO: string;
   allDay: boolean;
 }
 
@@ -23,18 +27,38 @@ export function DayDetailPanel({
   slots,
   selections,
   onToggle,
+  onSelectSlots,
   onClose,
+  onPrevDate,
+  onNextDate,
+  hasPrevDate,
+  hasNextDate,
 }: {
   date: string; // YYYY-MM-DD
   dateLabel: string;
   slots: DateSlot[];
   selections: Record<string, boolean>;
   onToggle: (slotId: string) => void;
+  onSelectSlots: (slotIds: string[]) => void;
   onClose: () => void;
+  onPrevDate: () => void;
+  onNextDate: () => void;
+  hasPrevDate: boolean;
+  hasNextDate: boolean;
 }) {
   const [events, setEvents] = useState<CalendarEvent[] | null>(null);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [authNeeded, setAuthNeeded] = useState(false);
+
+  const slotOverlaps = useMemo(() => {
+    if (!events) return {} as Record<string, OverlapResult>;
+    const map: Record<string, OverlapResult> = {};
+    for (const slot of slots) {
+      const range = parseDateRange(slot.label, undefined, "America/New_York");
+      map[slot.id] = checkSlotOverlap(range, events);
+    }
+    return map;
+  }, [events, slots]);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +91,34 @@ export function DayDetailPanel({
     };
   }, [date]);
 
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft" && hasPrevDate) {
+        e.preventDefault();
+        onPrevDate();
+      } else if (e.key === "ArrowRight" && hasNextDate) {
+        e.preventDefault();
+        onNextDate();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      } else if (e.key === "a") {
+        e.preventDefault();
+        onSelectSlots(slots.map((s) => s.id));
+      } else if (e.key === "g") {
+        e.preventDefault();
+        const freeSlots = slots.filter((s) => slotOverlaps[s.id] === "free");
+        if (freeSlots.length > 0) onSelectSlots(freeSlots.map((s) => s.id));
+      }
+    },
+    [hasPrevDate, hasNextDate, onPrevDate, onNextDate, onClose, onSelectSlots, slots, slotOverlaps],
+  );
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       {/* Backdrop */}
@@ -76,7 +128,31 @@ export function DayDetailPanel({
       <div className="relative w-full max-w-md bg-white shadow-xl flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-          <h2 className="text-lg font-semibold text-gray-900">{dateLabel}</h2>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onPrevDate}
+              disabled={!hasPrevDate}
+              className="rounded-md p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label="Previous date"
+            >
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
+            <h2 className="text-lg font-semibold text-gray-900">{dateLabel}</h2>
+            <button
+              type="button"
+              onClick={onNextDate}
+              disabled={!hasNextDate}
+              className="rounded-md p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label="Next date"
+            >
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
           <button
             onClick={onClose}
             className="rounded-md p-1 text-gray-400 hover:text-gray-600"
@@ -149,12 +225,18 @@ export function DayDetailPanel({
                     key={slot.id}
                     type="button"
                     onClick={() => onToggle(slot.id)}
-                    className={`w-full rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                    className={`w-full rounded-lg border px-4 py-3 text-left text-sm transition-colors flex items-center gap-2 ${
                       selections[slot.id]
                         ? "border-green-500 bg-green-50 text-green-800"
                         : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
                     }`}
                   >
+                    {slotOverlaps[slot.id] === "free" && (
+                      <span className="inline-block h-2 w-2 rounded-full bg-green-500 flex-shrink-0" title="No conflicts" />
+                    )}
+                    {slotOverlaps[slot.id] === "conflict" && (
+                      <span className="inline-block h-2 w-2 rounded-full bg-red-500 flex-shrink-0" title="Conflicts with calendar" />
+                    )}
                     {slot.label}
                   </button>
                 ))}

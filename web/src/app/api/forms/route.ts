@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       const slotsToCreate = result.sections.flatMap((section) =>
         section.options.map((option) => ({
           label: option,
-          date: parseDateLabel(option) ?? undefined,
+          date: parseDateLabel(option, undefined, "America/New_York") ?? undefined,
           groupLabel: section.sectionTitle,
           sortOrder: sortOrder++,
         }))
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       dateSlots: {
         create: parsed.slots.map((slot) => ({
           label: slot.label,
-          date: parseDateLabel(slot.label) ?? undefined,
+          date: parseDateLabel(slot.label, undefined, "America/New_York") ?? undefined,
           groupLabel: slot.groupLabel,
           sortOrder: slot.sortOrder,
         })),

@@ -4,6 +4,7 @@ import {
   groupSlotsByDate,
   getSlotMonths,
   formatDateKey,
+  formatDateKeyFromISO,
 } from "./calendar-utils";
 
 describe("formatDateKey", () => {
@@ -82,6 +83,20 @@ describe("groupSlotsByDate", () => {
   it("returns empty map for no slots", () => {
     expect(groupSlotsByDate([]).size).toBe(0);
   });
+
+  it("groups evening EDT slots to the correct local date", () => {
+    // 9:30 PM EDT on March 20 = 2026-03-21T01:30:00.000Z (next day in UTC)
+    const slots = [
+      { id: "1", date: "2026-03-21T01:30:00.000Z", label: "FRI 3/20 at 9:30PM" },
+      { id: "2", date: "2026-03-21T19:00:00.000Z", label: "SAT 3/21 at 3:00PM" },
+    ];
+    const grouped = groupSlotsByDate(slots, "America/New_York");
+    expect(grouped.size).toBe(2);
+    expect(grouped.get("2026-03-20")).toHaveLength(1);
+    expect(grouped.get("2026-03-20")![0].id).toBe("1");
+    expect(grouped.get("2026-03-21")).toHaveLength(1);
+    expect(grouped.get("2026-03-21")![0].id).toBe("2");
+  });
 });
 
 describe("getSlotMonths", () => {
@@ -107,5 +122,20 @@ describe("getSlotMonths", () => {
 
   it("returns empty for no slots", () => {
     expect(getSlotMonths([])).toEqual([]);
+  });
+});
+
+describe("formatDateKeyFromISO", () => {
+  it("returns correct date in the given timezone", () => {
+    // 1:30 AM UTC on March 21 = 9:30 PM EDT on March 20
+    expect(formatDateKeyFromISO("2026-03-21T01:30:00.000Z", "America/New_York")).toBe("2026-03-20");
+  });
+
+  it("returns same date when no day boundary is crossed", () => {
+    expect(formatDateKeyFromISO("2026-06-14T19:00:00.000Z", "America/New_York")).toBe("2026-06-14");
+  });
+
+  it("handles UTC timezone", () => {
+    expect(formatDateKeyFromISO("2026-03-21T01:30:00.000Z", "UTC")).toBe("2026-03-21");
   });
 });
