@@ -53,3 +53,14 @@ model Response {
   @@unique([dateSlotId, userName])
   @@index([dateSlotId])
 }
+
+model GoogleAuth {
+  id           String   @id @default(cuid())
+  sessionId    String   @unique
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime
+  email        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

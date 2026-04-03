@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { parseFormText } from "@/lib/parse-form-text";
+import { parseDateLabel } from "@/lib/parse-date-label";
 import { parseGoogleForm, type Backend } from "@/lib/backends";
 
 export async function POST(request: NextRequest) {
@@ -35,6 +36,7 @@ export async function POST(request: NextRequest) {
       const slotsToCreate = result.sections.flatMap((section) =>
         section.options.map((option) => ({
           label: option,
+          date: parseDateLabel(option) ?? undefined,
           groupLabel: section.sectionTitle,
           sortOrder: sortOrder++,
         }))
@@ -95,6 +97,7 @@ export async function POST(request: NextRequest) {
       dateSlots: {
         create: parsed.slots.map((slot) => ({
           label: slot.label,
+          date: parseDateLabel(slot.label) ?? undefined,
           groupLabel: slot.groupLabel,
           sortOrder: slot.sortOrder,
         })),

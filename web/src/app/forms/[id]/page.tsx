@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { ResponseForm } from "@/components/response-form";
+import { CalendarResponseForm } from "@/components/calendar-response-form";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -45,6 +46,17 @@ export default async function FormPage({
     );
   }
 
+  const hasCalendarDates = form.dateSlots.some((s) => s.date !== null);
+
+  // Serialize dates as ISO strings for client components
+  const serializedSlots = form.dateSlots.map((s) => ({
+    id: s.id,
+    label: s.label,
+    date: s.date ? s.date.toISOString() : null,
+    groupLabel: s.groupLabel,
+    sortOrder: s.sortOrder,
+  }));
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -57,7 +69,11 @@ export default async function FormPage({
         </Link>
       </div>
 
-      <ResponseForm formId={form.id} dateSlots={form.dateSlots} />
+      {hasCalendarDates ? (
+        <CalendarResponseForm formId={form.id} dateSlots={serializedSlots} />
+      ) : (
+        <ResponseForm formId={form.id} dateSlots={form.dateSlots} />
+      )}
     </div>
   );
 }
