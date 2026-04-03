@@ -16,6 +16,8 @@ services:
         sync: false
       - key: WORKFLOW_SERVICE_SLUG
         sync: false
+      - key: MODAL_ENDPOINT_URL
+        sync: false
 
 databases:
   - name: wit-form-filler-db

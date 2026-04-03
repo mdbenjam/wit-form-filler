@@ -9,6 +9,7 @@ export function CreateFormSection() {
   const [content, setContent] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [mode, setMode] = useState<"paste" | "url">("paste");
+  const [backend, setBackend] = useState<"render" | "modal">("render");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -21,7 +22,7 @@ export function CreateFormSection() {
       const body =
         mode === "paste"
           ? { title: title || undefined, content }
-          : { title: title || undefined, sourceUrl };
+          : { title: title || undefined, sourceUrl, backend };
 
       const res = await fetch("/api/forms", {
         method: "POST",
@@ -111,22 +112,54 @@ export function CreateFormSection() {
             />
           </div>
         ) : (
-          <div>
-            <label
-              htmlFor="sourceUrl"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Google Form URL
-            </label>
-            <input
-              id="sourceUrl"
-              type="url"
-              value={sourceUrl}
-              onChange={(e) => setSourceUrl(e.target.value)}
-              placeholder="https://docs.google.com/forms/d/e/..."
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-            />
-          </div>
+          <>
+            <div>
+              <label
+                htmlFor="sourceUrl"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Google Form URL
+              </label>
+              <input
+                id="sourceUrl"
+                type="url"
+                value={sourceUrl}
+                onChange={(e) => setSourceUrl(e.target.value)}
+                placeholder="https://docs.google.com/forms/d/e/..."
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Backend
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBackend("render")}
+                  className={`px-3 py-1.5 text-sm rounded-md ${
+                    backend === "render"
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  Render
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBackend("modal")}
+                  className={`px-3 py-1.5 text-sm rounded-md ${
+                    backend === "modal"
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  Modal
+                </button>
+              </div>
+            </div>
+          </>
         )}
 
         {error && (

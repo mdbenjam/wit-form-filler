@@ -8,6 +8,7 @@ export const parseGoogleForm = task(
     retry: { maxRetries: 2, waitDurationMs: 1000, backoffScaling: 2 },
   },
   async function parseGoogleForm(formUrl: string): Promise<FormData> {
+    throw new Error("test");
     const response = await fetch(formUrl);
     if (!response.ok) {
       throw new Error(

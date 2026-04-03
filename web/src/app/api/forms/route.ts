@@ -1,15 +1,17 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { parseFormText } from "@/lib/parse-form-text";
-import { triggerParseGoogleForm } from "@/lib/workflow";
+import { parseGoogleForm, type Backend } from "@/lib/backends";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { title, content, sourceUrl } = body as {
+  const { title, content, sourceUrl, backend: rawBackend } = body as {
     title?: string;
     content?: string;
     sourceUrl?: string;
+    backend?: string;
   };
+  const backend: Backend = rawBackend === "modal" ? "modal" : "render";
 
   if (sourceUrl) {
     // URL mode: create form in PENDING, trigger workflow to parse
@@ -23,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     // Trigger workflow and update form when done (blocking ~5-10s)
     try {
-      const result = await triggerParseGoogleForm(sourceUrl);
+      const result = await parseGoogleForm(sourceUrl, backend);
       console.log("Workflow result:", JSON.stringify(result, null, 2));
 
       let sortOrder = 0;
