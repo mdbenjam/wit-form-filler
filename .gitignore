@@ -5,3 +5,5 @@ dist/
 .env.local
 __pycache__/
 *.pyc
+
+.trigger

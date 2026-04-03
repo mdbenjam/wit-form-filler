@@ -11,7 +11,10 @@ export async function POST(request: NextRequest) {
     sourceUrl?: string;
     backend?: string;
   };
-  const backend: Backend = rawBackend === "modal" ? "modal" : "render";
+  const backend: Backend =
+    rawBackend === "modal" ? "modal" :
+    rawBackend === "trigger" ? "trigger" :
+    "render";
 
   if (sourceUrl) {
     // URL mode: create form in PENDING, trigger workflow to parse

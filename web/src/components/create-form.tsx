@@ -9,7 +9,7 @@ export function CreateFormSection() {
   const [content, setContent] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [mode, setMode] = useState<"paste" | "url">("paste");
-  const [backend, setBackend] = useState<"render" | "modal">("render");
+  const [backend, setBackend] = useState<"render" | "modal" | "trigger">("render");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -156,6 +156,17 @@ export function CreateFormSection() {
                   }`}
                 >
                   Modal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBackend("trigger")}
+                  className={`px-3 py-1.5 text-sm rounded-md ${
+                    backend === "trigger"
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  Trigger.dev
                 </button>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { triggerParseGoogleForm } from "./workflow";
 import { triggerParseGoogleFormModal } from "./modal";
+import { triggerParseGoogleFormTrigger } from "./trigger";
 
 interface FormSection {
   sectionTitle: string | null;
@@ -11,7 +12,7 @@ interface FormData {
   sections: FormSection[];
 }
 
-export type Backend = "render" | "modal";
+export type Backend = "render" | "modal" | "trigger";
 
 export async function parseGoogleForm(
   url: string,
@@ -22,5 +23,7 @@ export async function parseGoogleForm(
       return triggerParseGoogleForm(url);
     case "modal":
       return triggerParseGoogleFormModal(url);
+    case "trigger":
+      return triggerParseGoogleFormTrigger(url);
   }
 }

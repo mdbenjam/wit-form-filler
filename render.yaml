@@ -18,6 +18,8 @@ services:
         sync: false
       - key: MODAL_ENDPOINT_URL
         sync: false
+      - key: TRIGGER_SECRET_KEY
+        sync: false
 
 databases:
   - name: wit-form-filler-db
